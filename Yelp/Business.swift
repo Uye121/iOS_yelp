@@ -24,7 +24,9 @@ class Business: NSObject {
         if imageURLString != nil {
             imageURL = URL(string: imageURLString!)!
         } else {
-            imageURL = nil
+            // In case of imageURL being nil and cause app to crash
+            var blankImage = String("https://cdn4.iconfinder.com/data/icons/commerce-2/500/Map_marker_gps_location_map_store_1-512.png")
+            imageURL = URL(string: blankImage!)
         }
         
         let location = dictionary["location"] as? NSDictionary
