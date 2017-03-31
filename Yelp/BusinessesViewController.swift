@@ -13,6 +13,8 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     var businesses: [Business]!
     var filteredData: [String: Any]!
     var searchBar: UISearchBar!
+    var isMoreDataLoading = false
+    var offset = 20
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -102,6 +104,31 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         // Get rid of keyboard because view.endEditing did not work
         UIApplication.shared.sendAction("resignFirstResponder", to:nil, from:nil, for:nil)
 
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if (!isMoreDataLoading) {
+            // Calculate the position of one screen length before the bottom of the results
+            let scrollViewContentHeight = tableView.contentSize.height
+            let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height
+            
+            // When the user has scrolled past the threshold, start requesting
+            if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
+                isMoreDataLoading = true
+                
+                // ... Code to load more results ...
+                reloadSearch()
+            }
+        }
+    }
+    
+    func reloadSearch() {
+        Business.searchWithTerm(term: "", sort: nil, categories: ["food"], deals: false, offset: offset) { (businesses: [Business]?, error: Error?) in
+            self.businesses.append(contentsOf: businesses!)
+            self.isMoreDataLoading = false
+            self.offset += 20
+            self.tableView.reloadData()
+        }
     }
 
     /*
