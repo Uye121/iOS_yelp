@@ -15,6 +15,7 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     var searchBar: UISearchBar!
     var isMoreDataLoading = false
     var offset = 20
+    var loadingMoreView:InfiniteScrollActivityView?
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -31,6 +32,16 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         searchBar.delegate = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 120
+        
+        // Set up Infinite Scroll loading indicator
+        let frame = CGRect(x: 0, y: tableView.contentSize.height, width: tableView.bounds.size.width, height: InfiniteScrollActivityView.defaultHeight)
+        loadingMoreView = InfiniteScrollActivityView(frame: frame)
+        loadingMoreView!.isHidden = true
+        tableView.addSubview(loadingMoreView!)
+        
+        var insets = tableView.contentInset
+        insets.bottom += InfiniteScrollActivityView.defaultHeight
+        tableView.contentInset = insets
         
         Business.searchWithTerm(term: "Thai", completion: { (businesses: [Business]?, error: Error?) -> Void in
             
@@ -116,29 +127,38 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
             if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
                 isMoreDataLoading = true
                 
+                // Update position of loadingMoreView, and start loading indicator
+                let frame = CGRect(x: 0, y: tableView.contentSize.height, width: tableView.bounds.size.width, height: InfiniteScrollActivityView.defaultHeight)
+                loadingMoreView?.frame = frame
+                loadingMoreView!.startAnimating()
+                
                 // ... Code to load more results ...
-                reloadSearch()
+                loadMoreData()
             }
         }
     }
     
-    func reloadSearch() {
+    func loadMoreData() {
         Business.searchWithTerm(term: "", sort: nil, categories: ["food"], deals: false, offset: offset) { (businesses: [Business]?, error: Error?) in
             self.businesses.append(contentsOf: businesses!)
             self.isMoreDataLoading = false
             self.offset += 20
+            // Stop the loading indicator
+            self.loadingMoreView!.stopAnimating()
             self.tableView.reloadData()
         }
     }
 
-    /*
+    
      // MARK: - Navigation
      
      // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
      // Get the new view controller using segue.destinationViewController.
      // Pass the selected object to the new view controller.
+        let mapVC = segue.destination as! MapViewController
+        mapVC.businesses = businesses
      }
-     */
+    
     
 }
